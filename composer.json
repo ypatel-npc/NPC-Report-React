@@ -1,0 +1,14 @@
+{
+	"name": "your-vendor/npc-report-react",
+	"description": "WordPress plugin with React integration",
+	"type": "wordpress-plugin",
+	"autoload": {
+		"psr-4": {
+			"MyWPReact\\Core\\": "includes/",
+			"MyWPReact\\Admin\\": "includes/"
+		}
+	},
+	"require": {
+		"php": ">=7.4"
+	}
+}
