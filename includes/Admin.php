@@ -339,6 +339,7 @@ class Admin {
 	private function get_total_shipping( $start_date, $end_date ) {
 		global $wpdb;
 		$params = array(
+			'card_name' => 'get_total_shipping',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -374,6 +375,7 @@ class Admin {
 		// $result = $wpdb->get_var($query);
 		// return $result ? $result : 0;
 		$params = array(
+			'card_name' => 'get_tax_total',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -403,11 +405,12 @@ class Admin {
 		global $wpdb;
 
 		$params = array(
+			'card_name' => 'get_net_profit_total',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				array(
-					'status'                => array( 'wc-completed', 'wc-completed-warranty', 'wc-awaiting-pickup', 'wc-shipped', 'wc-shipped-warranty', 'wc-completed-warranty', 'wc-w-await-pickup', 'wc-awaiting-warranty-pickup' ),
+					'status'                => array( 'wc-completed', 'wc-shipped' ),
 					'total_amount_operator' => '>',
 					'total_amount'          => 0,
 				),
@@ -425,11 +428,12 @@ class Admin {
 		global $wpdb;
 
 		$params = array(
+			'card_name' => 'get_total_sales',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				array(
-					'status'                => array( 'wc-completed', 'wc-completed-warranty', 'wc-awaiting-pickup', 'wc-shipped', 'wc-shipped-warranty', 'wc-completed-warranty', 'wc-w-await-pickup', 'wc-awaiting-warranty-pickup' ),
+					'status'                => array( 'wc-completed', 'wc-shipped' ),
 					'total_amount_operator' => '>',
 					'total_amount'          => 0,
 				),
@@ -452,6 +456,7 @@ class Admin {
 		// ];
 
 		$params = array(
+			'card_name' => 'get_refunded_orders',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -478,6 +483,7 @@ class Admin {
 		// 'like_pattern' => '%Order status changed from % to Warranty Shipped%'
 		// ];
 		$params = array(
+			'card_name' => 'get_warranty_shipped',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -507,6 +513,7 @@ class Admin {
 		// ];
 
 		$params  = array(
+			'card_name' => 'get_shipped_orders',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -541,6 +548,7 @@ class Admin {
 
 		// Example usage:
 		$params = array(
+			'card_name' => 'get_completed_warranty',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -582,6 +590,7 @@ class Admin {
 		// 'like_pattern' => 'Order status changed from % to Completed'
 		// ];
 		$params = array(
+			'card_name' => 'get_completed_orders',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -611,6 +620,7 @@ class Admin {
 		// 'like_pattern' => '%Order status changed from % to Quote%'
 		// ];
 		$params  = array(
+			'card_name' => 'get_quote_orders',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -637,6 +647,7 @@ class Admin {
 		// 'like_pattern' => '%Order status changed from % to Awaiting Pickup%'
 		// ];
 		$params = array(
+			'card_name' => 'get_awaiting_pickup',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -665,6 +676,7 @@ class Admin {
 		// 'like_pattern' => '%Order status changed from % to Awaiting Warranty Pickup%'
 		// ];
 		$params = array(
+			'card_name' => 'get_awaiting_warranty_pickup',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -979,12 +991,12 @@ class Admin {
 
 		// Log the query for debugging
 		error_log( '================================' );
-		error_log( 'Common Query: ' . $prepared_query );
+		error_log( ' Card Name '. $params['card_name'] . '  Common Query: ' . $prepared_query );
 		error_log( '================================' );
 		// Execute the query
 		$results = $wpdb->get_results( $prepared_query );
 		if ( count( $results ) > 0 ) {
-			error_log( 'Common Query results: ' . print_r( $results, true ) );
+			error_log( ' Query results: ' . print_r( $results, true ) );
 		}
 		// return $results = ( $results ) ? $results[0]->order_count : null;
 		if ( $results ) {
