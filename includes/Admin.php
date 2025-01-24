@@ -233,7 +233,7 @@ class Admin {
         'value'  => $this->get_completed_warranty( $start_date, $end_date ),
         'icon'   => 'dashicons-shield-alt', // Represents warranty completion
         'color'  => '#4CAF50', // Green for successful warranty completion
-        'status' => 'wc-completed-warranty',
+        'status' => 'wc-complete-warranty',
     ),
     array(
         'title'  => 'Awaiting Pickup',
@@ -344,7 +344,7 @@ class Admin {
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				array(
-					'status' => array( 'wc-completed', 'wc-completed-warranty', 'wc-awaiting-pickup', 'wc-shipped', 'wc-shipped-warranty', 'wc-completed-warranty', 'wc-w-await-pickup', 'wc-awaiting-warranty-pickup' ),
+					'status' => array( 'wc-completed', 'wc-complete-warranty', 'wc-awaiting-pickup', 'wc-shipped', 'wc-shipped-warranty', 'wc-w-await-pickup', 'wc-awaiting-warranty-pickup' ),
 					// 'total_tax_operator' => '>',
 					// 'total_tax'          => 0,
 				),
@@ -368,7 +368,7 @@ class Admin {
 		// ON oi.order_id = p.ID
 		// WHERE om.meta_key = 'tax_amount'
 		// AND p.post_type = 'shop_order'
-		// AND p.post_status IN ('wc-completed', 'wc-shipped', 'wc-completed-warranty')
+		// AND p.post_status IN ('wc-completed', 'wc-shipped', 'wc-complete-warranty')
 		// AND p.post_date BETWEEN %s AND %s
 		// ", $start_date . ' 00:00:00', $end_date . ' 23:59:59');
 		// error_log('query: ' . $query);
@@ -380,7 +380,7 @@ class Admin {
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				array(
-					'status'             => array( 'wc-completed', 'wc-completed-warranty', 'wc-awaiting-pickup', 'wc-shipped', 'wc-shipped-warranty', 'wc-completed-warranty', 'wc-w-await-pickup', 'wc-awaiting-warranty-pickup' ),
+					'status'             => array( 'wc-completed', 'wc-complete-warranty', 'wc-awaiting-pickup', 'wc-shipped', 'wc-shipped-warranty', 'wc-complete-warranty', 'wc-w-await-pickup', 'wc-awaiting-warranty-pickup' ),
 					'total_tax_operator' => '>',
 					'total_tax'          => 0,
 				),
@@ -539,8 +539,8 @@ class Admin {
 		// $params = [
 		// 'start_date' => '2024-06-01 00:00:00',
 		// 'end_date' => $end_date . ' 23:59:59',
-		// 'statuses' => ['wc-completed-warranty'],
-		// 'like_pattern' => '%Order status changed from % to Completed Warranty%'
+		// 'statuses' => ['wc-complete-warranty'],
+		// 'like_pattern' => '%Order status changed from % to Warranty Complete%'
 		// ];
 
 		// $results = $this->getOrderStatusSummary($params);
@@ -552,24 +552,24 @@ class Admin {
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
+				// array(
+				// 	'status'                => array( 'wc-completed' ),
+				// 	'like_pattern'          => '%Order status changed from % to Completed%',
+				// 	'total_amount'          => 0,
+				// 	'total_amount_operator' => '=',
+				// ),
 				array(
-					'status'                => array( 'wc-completed' ),
-					'like_pattern'          => '%Order status changed from % to Completed%',
+					'status'                => array( 'wc-complete-warranty' ),
+					'like_pattern'          => '%Order status changed from % to Warranty Complete%',
 					'total_amount'          => 0,
 					'total_amount_operator' => '=',
 				),
-				array(
-					'status'                => array( 'wc-completed-warranty' ),
-					'like_pattern'          => '%Order status changed from % to Completed Warranty%',
-					'total_amount'          => 0,
-					'total_amount_operator' => '=',
-				),
-				array(
-					'status'                => array( 'wc-shipped' ),
-					'like_pattern'          => '%Order status changed from % to Shipped%',
-					'total_amount'          => 0,
-					'total_amount_operator' => '=',
-				),
+				// array(
+				// 	'status'                => array( 'wc-shipped' ),
+				// 	'like_pattern'          => '%Order status changed from % to Shipped%',
+				// 	'total_amount'          => 0,
+				// 	'total_amount_operator' => '=',
+				// ),
 			),
 		);
 
@@ -1351,8 +1351,8 @@ class Admin {
 		// 'like_pattern' => '%Order status changed from % to Warranty Shipped%',
 		// 'total_amount' => '= 0'
 		// ],
-		// 'wc-completed-warranty' => [
-		// 'statuses' => ['wc-completed', 'wc-completed-warranty'],
+		// 'wc-complete-warranty' => [
+		// 'statuses' => ['wc-completed', 'wc-complete-warranty'],
 		// 'like_pattern' => '%Order status changed from % to % Warranty%',
 		// 'total_amount' => '= 0'
 		// ],
@@ -1454,26 +1454,26 @@ class Admin {
 					),
 				),
 			),
-			'wc-completed-warranty'       => array(
+			'wc-complete-warranty'       => array(
 				'conditions' => array(
+					// array(
+					// 	'status'                => array( 'wc-completed' ),
+					// 	'like_pattern'          => '%Order status changed from % to Completed%',
+					// 	'total_amount'          => 0,
+					// 	'total_amount_operator' => '=',
+					// ),
 					array(
-						'status'                => array( 'wc-completed' ),
-						'like_pattern'          => '%Order status changed from % to Completed%',
+						'status'                => array( 'wc-complete-warranty' ),
+						'like_pattern'          => '%Order status changed from % to Warranty Complete%',
 						'total_amount'          => 0,
 						'total_amount_operator' => '=',
 					),
-					array(
-						'status'                => array( 'wc-completed-warranty' ),
-						'like_pattern'          => '%Order status changed from % to Completed Warranty%',
-						'total_amount'          => 0,
-						'total_amount_operator' => '=',
-					),
-					array(
-						'status'                => array( 'wc-shipped' ),
-						'like_pattern'          => '%Order status changed from % to Shipped%',
-						'total_amount'          => 0,
-						'total_amount_operator' => '=',
-					),
+					// array(
+					// 	'status'                => array( 'wc-shipped' ),
+					// 	'like_pattern'          => '%Order status changed from % to Shipped%',
+					// 	'total_amount'          => 0,
+					// 	'total_amount_operator' => '=',
+					// ),
 				),
 			),
 
