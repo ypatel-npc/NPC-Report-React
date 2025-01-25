@@ -960,10 +960,7 @@ class Admin {
 			SUM(DISTINCT o.total_amount) AS total_amount_sum,
 			SUM(DISTINCT os.tax_total) AS total_tax_sum,
 			SUM(DISTINCT os.shipping_total) AS shipping_total,
-				  SUM(CASE 
-            WHEN om.meta_key = '_stripe_net' AND om.meta_value IS NOT NULL THEN om.meta_value
-            ELSE COALESCE(os.total_sales, 0) 
-        END) AS net_total,
+			SUM(DISTINCT CASE WHEN om.meta_key = '_stripe_net' AND om.meta_value IS NOT NULL THEN om.meta_value ELSE COALESCE(os.total_sales, 0) END) AS net_total,
 			COALESCE(SUM(DISTINCT o.total_amount), 0) AS total_refund_amount
 
         FROM
@@ -971,7 +968,8 @@ class Admin {
         LEFT JOIN
             {$wpdb->prefix}wc_order_stats os ON o.id = os.order_id
         LEFT JOIN
-            {$wpdb->prefix}wc_orders_meta om ON o.id = om.order_id
+            {$wpdb->prefix}wc_orders_meta om ON o.id = om.order_id 
+			AND om.meta_key = '_stripe_net'
         LEFT JOIN
             {$wpdb->prefix}comments c ON o.id = c.comment_post_ID 
             AND c.comment_type = 'order_note'
