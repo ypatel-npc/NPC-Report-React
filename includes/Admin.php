@@ -960,7 +960,10 @@ class Admin {
 			SUM(DISTINCT o.total_amount) AS total_amount_sum,
 			SUM(DISTINCT os.tax_total) AS total_tax_sum,
 			SUM(DISTINCT os.shipping_total) AS shipping_total,
-			SUM(DISTINCT os.net_total) AS net_total,
+				  SUM(CASE 
+            WHEN om.meta_key = '_stripe_net' AND om.meta_value IS NOT NULL THEN om.meta_value
+            ELSE COALESCE(os.total_sales, 0) 
+        END) AS net_total,
 			COALESCE(SUM(DISTINCT o.total_amount), 0) AS total_refund_amount
 
         FROM
