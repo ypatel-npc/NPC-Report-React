@@ -10,6 +10,7 @@ class Admin {
 
 
 
+
 	private $plugin_page_hook;
 
 	public function __construct() {
@@ -193,99 +194,98 @@ class Admin {
 		// Get stats with date range
 		$stats =
 			array(
-    array(
-        'title'  => 'Shipped Orders',
-        'value'  => $this->get_shipped_orders( $start_date, $end_date ),
-        'icon'   => 'dashicons-airplane', // Represents shipping
-        'color'  => '#4CAF50', // Green for success
-        'status' => 'wc-shipped',
-    ),
-    array(
-        'title'  => 'Warranty shipped',
-        'value'  => $this->get_warranty_shipped( $start_date, $end_date ),
-        'icon'   => 'dashicons-shield', // Represents warranty
-        'color'  => '#009688', // Teal for security
-        'status' => 'wc-shipped-warranty',
-    ),
-    array(
-        'title'  => 'Refunded Orders',
-        'value'  => $this->get_refunded_orders( $start_date, $end_date ),
-        'icon'   => 'dashicons-backup', // Represents returning/refunds
-        'color'  => '#F44336', // Red for refunds
-        'status' => 'wc-refunded',
-    ),
-    array(
-        'title'  => 'Completed Orders',
-        'value'  => $this->get_completed_orders( $start_date, $end_date ),
-        'icon'   => 'dashicons-yes', // Represents completion
-        'color'  => '#8BC34A', // Light green for completion
-        'status' => 'wc-completed',
-    ),
-    array(
-        'title'  => 'Quote',
-        'value'  => $this->get_quote_orders( $start_date, $end_date ),
-        'icon'   => 'dashicons-format-quote', // Represents quote
-        'color'  => '#FFC107', // Amber for quote consideration
-        'status' => 'wc-quote',
-    ),
-    array(
-        'title'  => 'Completed Warranty',
-        'value'  => $this->get_completed_warranty( $start_date, $end_date ),
-        'icon'   => 'dashicons-shield-alt', // Represents warranty completion
-        'color'  => '#4CAF50', // Green for successful warranty completion
-        'status' => 'wc-complete-warranty',
-    ),
-    array(
-        'title'  => 'Awaiting Pickup',
-        'value'  => $this->get_awaiting_pickup( $start_date, $end_date ),
-        'icon'   => 'dashicons-location-alt', // Represents pickup location
-        'color'  => '#FF9800', // Orange for pending action
-        'status' => 'wc-awaiting-pickup',
-    ),
-    array(
-        'title'  => 'Awaiting Warranty Pickup',
-        'value'  => $this->get_awaiting_warranty_pickup( $start_date, $end_date ),
-        'icon'   => 'dashicons-location', // Represents warranty pickup location
-        'color'  => '#FF5722', // Deep orange for pending warranty pickup
-        'status' => 'wc-w-await-pickup',
-    ),
-    array(
-        'title' => 'Tax Total',
-        'note'  => 'Total tax collected',
-        'value' => $this->get_tax_total( $start_date, $end_date ),
-        'icon'  => 'dashicons-chart-area', // Represents tax summary
-        'color' => '#9C27B0', // Purple for financial metrics
-    ),
-    array(
-        'title' => 'Net Profit Total',
-        'note'  => 'After removing tax',
-        'value' => $this->get_net_profit_total( $start_date, $end_date ),
-        'icon'  => 'dashicons-chart-line', // Represents profit trends
-        'color' => '#4CAF50', // Green for profit
-    ),
-    array(
-        'title' => 'Shipping Tax',
-        'note'  => 'Total shipping with tax and net profit included',
-        'value' => $this->get_total_shipping( $start_date, $end_date ),
-        'icon'  => 'dashicons-admin-site-alt3', // Represents shipping cost breakdown
-        'color' => '#607D8B', // Blue-grey for calculated metrics
-    ),
-    array(
-        'title' => 'Total Sales',
-        'note'  => 'Total sales with tax and net profit included',
-        'value' => $this->get_total_sales( $start_date, $end_date ),
-        'icon'  => 'dashicons-cart', // Represents sales
-        'color' => '#2196F3', // Blue for sales
-    ),
-    array(
-        'title' => 'Total Refund Amount',
-        'note'  => 'Total refund with tax and net profit included',
-        'value' => $this->get_total_refunds( $start_date, $end_date ),
-        'icon'  => 'dashicons-backup', // Represents refunds
-        'color' => '#E91E63', // Pink for refund alert
-    ),
-);
-
+				array(
+					'title'  => 'Shipped Orders',
+					'value'  => $this->get_shipped_orders( $start_date, $end_date ),
+					'icon'   => 'dashicons-airplane', // Represents shipping
+					'color'  => '#4CAF50', // Green for success
+					'status' => 'wc-shipped',
+				),
+				array(
+					'title'  => 'Warranty shipped',
+					'value'  => $this->get_warranty_shipped( $start_date, $end_date ),
+					'icon'   => 'dashicons-shield', // Represents warranty
+					'color'  => '#009688', // Teal for security
+					'status' => 'wc-shipped-warranty',
+				),
+				array(
+					'title'  => 'Refunded Orders',
+					'value'  => $this->get_refunded_orders( $start_date, $end_date ),
+					'icon'   => 'dashicons-backup', // Represents returning/refunds
+					'color'  => '#F44336', // Red for refunds
+					'status' => 'wc-refunded',
+				),
+				array(
+					'title'  => 'Completed Orders',
+					'value'  => $this->get_completed_orders( $start_date, $end_date ),
+					'icon'   => 'dashicons-yes', // Represents completion
+					'color'  => '#8BC34A', // Light green for completion
+					'status' => 'wc-completed',
+				),
+				array(
+					'title'  => 'Quote',
+					'value'  => $this->get_quote_orders( $start_date, $end_date ),
+					'icon'   => 'dashicons-format-quote', // Represents quote
+					'color'  => '#FFC107', // Amber for quote consideration
+					'status' => 'wc-quote',
+				),
+				array(
+					'title'  => 'Completed Warranty',
+					'value'  => $this->get_completed_warranty( $start_date, $end_date ),
+					'icon'   => 'dashicons-shield-alt', // Represents warranty completion
+					'color'  => '#4CAF50', // Green for successful warranty completion
+					'status' => 'wc-complete-warranty',
+				),
+				array(
+					'title'  => 'Awaiting Pickup',
+					'value'  => $this->get_awaiting_pickup( $start_date, $end_date ),
+					'icon'   => 'dashicons-location-alt', // Represents pickup location
+					'color'  => '#FF9800', // Orange for pending action
+					'status' => 'wc-awaiting-pickup',
+				),
+				array(
+					'title'  => 'Awaiting Warranty Pickup',
+					'value'  => $this->get_awaiting_warranty_pickup( $start_date, $end_date ),
+					'icon'   => 'dashicons-location', // Represents warranty pickup location
+					'color'  => '#FF5722', // Deep orange for pending warranty pickup
+					'status' => 'wc-w-await-pickup',
+				),
+				array(
+					'title' => 'Tax Total',
+					'note'  => 'Total tax collected',
+					'value' => $this->get_tax_total( $start_date, $end_date ),
+					'icon'  => 'dashicons-chart-area', // Represents tax summary
+					'color' => '#9C27B0', // Purple for financial metrics
+				),
+				array(
+					'title' => 'Net Profit Total',
+					'note'  => 'After removing tax',
+					'value' => $this->get_net_profit_total( $start_date, $end_date ),
+					'icon'  => 'dashicons-chart-line', // Represents profit trends
+					'color' => '#4CAF50', // Green for profit
+				),
+				array(
+					'title' => 'Shipping Tax',
+					'note'  => 'Total shipping with tax and net profit included',
+					'value' => $this->get_total_shipping( $start_date, $end_date ),
+					'icon'  => 'dashicons-admin-site-alt3', // Represents shipping cost breakdown
+					'color' => '#607D8B', // Blue-grey for calculated metrics
+				),
+				array(
+					'title' => 'Total Sales',
+					'note'  => 'Total sales with tax and net profit included',
+					'value' => $this->get_total_sales( $start_date, $end_date ),
+					'icon'  => 'dashicons-cart', // Represents sales
+					'color' => '#2196F3', // Blue for sales
+				),
+				array(
+					'title' => 'Total Refund Amount',
+					'note'  => 'Total refund with tax and net profit included',
+					'value' => $this->get_total_refunds( $start_date, $end_date ),
+					'icon'  => 'dashicons-backup', // Represents refunds
+					'color' => '#E91E63', // Pink for refund alert
+				),
+			);
 
 		return rest_ensure_response( $stats );
 	}
@@ -339,7 +339,7 @@ class Admin {
 	private function get_total_shipping( $start_date, $end_date ) {
 		global $wpdb;
 		$params = array(
-			'card_name' => 'get_total_shipping',
+			'card_name'  => 'get_total_shipping',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -375,7 +375,7 @@ class Admin {
 		// $result = $wpdb->get_var($query);
 		// return $result ? $result : 0;
 		$params = array(
-			'card_name' => 'get_tax_total',
+			'card_name'  => 'get_tax_total',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -405,14 +405,27 @@ class Admin {
 		global $wpdb;
 
 		$params = array(
-			'card_name' => 'get_net_profit_total',
+			'card_name'  => 'get_net_profit_total',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				array(
-					'status'                => array( 'wc-completed', 'wc-shipped' ),
-					'total_amount_operator' => '>',
+					'status'                => array('wc-completed'),
+					'like_pattern'          => '%Order status changed from % to Completed%',
 					'total_amount'          => 0,
+					'total_amount_operator' => '>',
+				),
+				array(
+					'status'                => array('wc-complete-warranty'),
+					'like_pattern'          => '%Order status changed from % to Warranty Complete%',
+					'total_amount'          => 0,
+					'total_amount_operator' => '>',
+				),
+				array(
+					'status'                => array('wc-shipped'),
+					'like_pattern'          => '%Order status changed from % to Shipped%',
+					'total_amount'          => 0,
+					'total_amount_operator' => '>',
 				),
 			),
 		);
@@ -428,14 +441,32 @@ class Admin {
 		global $wpdb;
 
 		$params = array(
-			'card_name' => 'get_total_sales',
+			'card_name'  => 'get_total_sales',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
+				// array(
+				// 'status'                => array( 'wc-completed', 'wc-shipped' ),
+				// 'total_amount_operator' => '>',
+				// 'total_amount'          => 0,
+				// ),
 				array(
-					'status'                => array( 'wc-completed', 'wc-shipped' ),
-					'total_amount_operator' => '>',
+					'status'                => array( 'wc-completed' ),
+					'like_pattern'          => '%Order status changed from % to Completed%',
 					'total_amount'          => 0,
+					'total_amount_operator' => '>',
+				),
+				array(
+					'status'                => array( 'wc-complete-warranty' ),
+					'like_pattern'          => '%Order status changed from % to Warranty Complete%',
+					'total_amount'          => 0,
+					'total_amount_operator' => '>',
+				),
+				array(
+					'status'                => array( 'wc-shipped' ),
+					'like_pattern'          => '%Order status changed from % to Shipped%',
+					'total_amount'          => 0,
+					'total_amount_operator' => '>',
 				),
 			),
 		);
@@ -456,7 +487,7 @@ class Admin {
 		// ];
 
 		$params = array(
-			'card_name' => 'get_refunded_orders',
+			'card_name'  => 'get_refunded_orders',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -483,7 +514,7 @@ class Admin {
 		// 'like_pattern' => '%Order status changed from % to Warranty Shipped%'
 		// ];
 		$params = array(
-			'card_name' => 'get_warranty_shipped',
+			'card_name'  => 'get_warranty_shipped',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -513,7 +544,7 @@ class Admin {
 		// ];
 
 		$params  = array(
-			'card_name' => 'get_shipped_orders',
+			'card_name'  => 'get_shipped_orders',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -548,15 +579,15 @@ class Admin {
 
 		// Example usage:
 		$params = array(
-			'card_name' => 'get_completed_warranty',
+			'card_name'  => 'get_completed_warranty',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				// array(
-				// 	'status'                => array( 'wc-completed' ),
-				// 	'like_pattern'          => '%Order status changed from % to Completed%',
-				// 	'total_amount'          => 0,
-				// 	'total_amount_operator' => '=',
+				// 'status'                => array( 'wc-completed' ),
+				// 'like_pattern'          => '%Order status changed from % to Completed%',
+				// 'total_amount'          => 0,
+				// 'total_amount_operator' => '=',
 				// ),
 				array(
 					'status'                => array( 'wc-complete-warranty' ),
@@ -565,10 +596,10 @@ class Admin {
 					'total_amount_operator' => '=',
 				),
 				// array(
-				// 	'status'                => array( 'wc-shipped' ),
-				// 	'like_pattern'          => '%Order status changed from % to Shipped%',
-				// 	'total_amount'          => 0,
-				// 	'total_amount_operator' => '=',
+				// 'status'                => array( 'wc-shipped' ),
+				// 'like_pattern'          => '%Order status changed from % to Shipped%',
+				// 'total_amount'          => 0,
+				// 'total_amount_operator' => '=',
 				// ),
 			),
 		);
@@ -590,7 +621,7 @@ class Admin {
 		// 'like_pattern' => 'Order status changed from % to Completed'
 		// ];
 		$params = array(
-			'card_name' => 'get_completed_orders',
+			'card_name'  => 'get_completed_orders',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -620,7 +651,7 @@ class Admin {
 		// 'like_pattern' => '%Order status changed from % to Quote%'
 		// ];
 		$params  = array(
-			'card_name' => 'get_quote_orders',
+			'card_name'  => 'get_quote_orders',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -647,7 +678,7 @@ class Admin {
 		// 'like_pattern' => '%Order status changed from % to Awaiting Pickup%'
 		// ];
 		$params = array(
-			'card_name' => 'get_awaiting_pickup',
+			'card_name'  => 'get_awaiting_pickup',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -676,7 +707,7 @@ class Admin {
 		// 'like_pattern' => '%Order status changed from % to Awaiting Warranty Pickup%'
 		// ];
 		$params = array(
-			'card_name' => 'get_awaiting_warranty_pickup',
+			'card_name'  => 'get_awaiting_warranty_pickup',
 			'start_date' => $start_date . ' 00:00:00',
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
@@ -991,7 +1022,7 @@ class Admin {
 
 		// Log the query for debugging
 		error_log( '================================' );
-		error_log( ' Card Name '. $params['card_name'] . '  Common Query: ' . $prepared_query );
+		error_log( ' Card Name ' . $params['card_name'] . '  Common Query: ' . $prepared_query );
 		error_log( '================================' );
 		// Execute the query
 		$results = $wpdb->get_results( $prepared_query );
@@ -1454,13 +1485,13 @@ class Admin {
 					),
 				),
 			),
-			'wc-complete-warranty'       => array(
+			'wc-complete-warranty'        => array(
 				'conditions' => array(
 					// array(
-					// 	'status'                => array( 'wc-completed' ),
-					// 	'like_pattern'          => '%Order status changed from % to Completed%',
-					// 	'total_amount'          => 0,
-					// 	'total_amount_operator' => '=',
+					// 'status'                => array( 'wc-completed' ),
+					// 'like_pattern'          => '%Order status changed from % to Completed%',
+					// 'total_amount'          => 0,
+					// 'total_amount_operator' => '=',
 					// ),
 					array(
 						'status'                => array( 'wc-complete-warranty' ),
@@ -1469,10 +1500,10 @@ class Admin {
 						'total_amount_operator' => '=',
 					),
 					// array(
-					// 	'status'                => array( 'wc-shipped' ),
-					// 	'like_pattern'          => '%Order status changed from % to Shipped%',
-					// 	'total_amount'          => 0,
-					// 	'total_amount_operator' => '=',
+					// 'status'                => array( 'wc-shipped' ),
+					// 'like_pattern'          => '%Order status changed from % to Shipped%',
+					// 'total_amount'          => 0,
+					// 'total_amount_operator' => '=',
 					// ),
 				),
 			),
