@@ -2,42 +2,46 @@
 
 namespace MyWPReact\Admin;
 
-if ( ! defined( 'ABSPATH' ) ) {
+if (! defined('ABSPATH')) {
 	exit;
 }
 
-class Admin {
+class Admin
+{
 
 
 
 
 	private $plugin_page_hook;
 
-	public function __construct() {
+	public function __construct()
+	{
 		// Register REST API routes immediately
-		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
+		add_action('rest_api_init', array($this, 'register_rest_routes'));
 	}
 
-	public function init() {
+	public function init()
+	{
 		// Admin pages
-		add_action( 'admin_menu', array( $this, 'add_menu_page' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+		add_action('admin_menu', array($this, 'add_menu_page'));
+		add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
 	}
 
-	public function register_rest_routes() {
+	public function register_rest_routes()
+	{
 		register_rest_route(
 			'npc-report/v1',
 			'/stats',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_stats_data' ),
-				'permission_callback' => function ( $request ) {
+				'callback'            => array($this, 'get_stats_data'),
+				'permission_callback' => function ($request) {
 					// Verify if user is admin
-					if ( ! current_user_can( 'manage_options' ) ) {
+					if (! current_user_can('manage_options')) {
 						return new \WP_Error(
 							'rest_forbidden',
 							'Sorry, you are not allowed to do that.',
-							array( 'status' => 401 )
+							array('status' => 401)
 						);
 					}
 					return true;
@@ -50,8 +54,8 @@ class Admin {
 			'/orders',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_filtered_orders' ),
-				'permission_callback' => function ( $request ) {
+				'callback'            => array($this, 'get_filtered_orders'),
+				'permission_callback' => function ($request) {
 					return true;
 				},
 			)
@@ -59,34 +63,35 @@ class Admin {
 	}
 
 
-	function get_filtered_orders( $request ) {
+	function get_filtered_orders($request)
+	{
 		global $wpdb;
 
 		// Sanitize and fetch query parameters
-		$status     = sanitize_text_field( $request->get_param( 'status' ) );
-		$start_date = sanitize_text_field( $request->get_param( 'start_date' ) );
-		$end_date   = sanitize_text_field( $request->get_param( 'end_date' ) );
-		$page       = (int) ( $request->get_param( 'page' ) ?: 1 );
-		$per_page   = (int) ( $request->get_param( 'per_page' ) ?: 20 );
-		$offset     = ( $page - 1 ) * $per_page;
+		$status     = sanitize_text_field($request->get_param('status'));
+		$start_date = sanitize_text_field($request->get_param('start_date'));
+		$end_date   = sanitize_text_field($request->get_param('end_date'));
+		$page       = (int) ($request->get_param('page') ?: 1);
+		$per_page   = (int) ($request->get_param('per_page') ?: 20);
+		$offset     = ($page - 1) * $per_page;
 
 		// Get orders and total count
-		$orders       = $this->execute_orders_query( $status, $start_date, $end_date, $per_page, $offset );
-		$total_orders = $this->get_orders_count( $status, $start_date, $end_date );
+		$orders       = $this->execute_orders_query($status, $start_date, $end_date, $per_page, $offset);
+		$total_orders = $this->get_orders_count($status, $start_date, $end_date);
 
 		// Log results for debugging
-		error_log( 'Orders: ' . print_r( $orders, true ) );
-		error_log( 'Total Orders: ' . $total_orders );
+		error_log('Orders: ' . print_r($orders, true));
+		error_log('Total Orders: ' . $total_orders);
 
 		// Prepare response
 		return array(
 			'orders' => array_map(
-				function ( $order ) {
+				function ($order) {
 					return array(
 						'id'       => $order->order_id,
 						// 'date' => $order->order_date ?? null, // Use if `order_date` exists in the result
 						'date'     => $order->order_update_date ?? null, // Use if `order_update_date` exists in the result
-						'status'   => str_replace( 'wc-', '', $order->order_status ),
+						'status'   => str_replace('wc-', '', $order->order_status),
 						'type'     => $order->order_type,
 						'tax'      => $order->tax,
 						'total'    => $order->total,
@@ -97,7 +102,7 @@ class Admin {
 				$orders
 			),
 			'total'  => (int) $total_orders,
-			'pages'  => ceil( $total_orders / $per_page ),
+			'pages'  => ceil($total_orders / $per_page),
 		);
 	}
 
@@ -177,17 +182,18 @@ class Admin {
 	// }
 
 
-	public function get_stats_data( $request ) {
+	public function get_stats_data($request)
+	{
 		// Get and validate date parameters
-		$start_date = $request->get_param( 'start_date' );
-		$end_date   = $request->get_param( 'end_date' );
+		$start_date = $request->get_param('start_date');
+		$end_date   = $request->get_param('end_date');
 
 		// Validate dates
-		if ( ! $this->validate_dates( $start_date, $end_date ) ) {
+		if (! $this->validate_dates($start_date, $end_date)) {
 			return new \WP_Error(
 				'invalid_dates',
 				'Invalid date range provided.',
-				array( 'status' => 400 )
+				array('status' => 400)
 			);
 		}
 
@@ -196,56 +202,56 @@ class Admin {
 			array(
 				array(
 					'title'  => 'Shipped Orders',
-					'value'  => $this->get_shipped_orders( $start_date, $end_date ),
+					'value'  => $this->get_shipped_orders($start_date, $end_date),
 					'icon'   => 'dashicons-airplane', // Represents shipping
 					'color'  => '#4CAF50', // Green for success
 					'status' => 'wc-shipped',
 				),
 				array(
 					'title'  => 'Warranty shipped',
-					'value'  => $this->get_warranty_shipped( $start_date, $end_date ),
+					'value'  => $this->get_warranty_shipped($start_date, $end_date),
 					'icon'   => 'dashicons-shield', // Represents warranty
 					'color'  => '#009688', // Teal for security
 					'status' => 'wc-shipped-warranty',
 				),
 				array(
 					'title'  => 'Refunded Orders',
-					'value'  => $this->get_refunded_orders( $start_date, $end_date ),
+					'value'  => $this->get_refunded_orders($start_date, $end_date),
 					'icon'   => 'dashicons-backup', // Represents returning/refunds
 					'color'  => '#F44336', // Red for refunds
 					'status' => 'wc-refunded',
 				),
 				array(
 					'title'  => 'Completed Orders',
-					'value'  => $this->get_completed_orders( $start_date, $end_date ),
+					'value'  => $this->get_completed_orders($start_date, $end_date),
 					'icon'   => 'dashicons-yes', // Represents completion
 					'color'  => '#8BC34A', // Light green for completion
 					'status' => 'wc-completed',
 				),
 				array(
 					'title'  => 'Quote',
-					'value'  => $this->get_quote_orders( $start_date, $end_date ),
+					'value'  => $this->get_quote_orders($start_date, $end_date),
 					'icon'   => 'dashicons-format-quote', // Represents quote
 					'color'  => '#FFC107', // Amber for quote consideration
 					'status' => 'wc-quote',
 				),
 				array(
 					'title'  => 'Completed Warranty',
-					'value'  => $this->get_completed_warranty( $start_date, $end_date ),
+					'value'  => $this->get_completed_warranty($start_date, $end_date),
 					'icon'   => 'dashicons-shield-alt', // Represents warranty completion
 					'color'  => '#4CAF50', // Green for successful warranty completion
 					'status' => 'wc-complete-warranty',
 				),
 				array(
 					'title'  => 'Awaiting Pickup',
-					'value'  => $this->get_awaiting_pickup( $start_date, $end_date ),
+					'value'  => $this->get_awaiting_pickup($start_date, $end_date),
 					'icon'   => 'dashicons-location-alt', // Represents pickup location
 					'color'  => '#FF9800', // Orange for pending action
 					'status' => 'wc-awaiting-pickup',
 				),
 				array(
 					'title'  => 'Awaiting Warranty Pickup',
-					'value'  => $this->get_awaiting_warranty_pickup( $start_date, $end_date ),
+					'value'  => $this->get_awaiting_warranty_pickup($start_date, $end_date),
 					'icon'   => 'dashicons-location', // Represents warranty pickup location
 					'color'  => '#FF5722', // Deep orange for pending warranty pickup
 					'status' => 'wc-w-await-pickup',
@@ -253,58 +259,60 @@ class Admin {
 				array(
 					'title' => 'Tax Total',
 					'note'  => 'Total tax collected',
-					'value' => $this->get_tax_total( $start_date, $end_date ),
+					'value' => $this->get_tax_total($start_date, $end_date),
 					'icon'  => 'dashicons-chart-area', // Represents tax summary
 					'color' => '#9C27B0', // Purple for financial metrics
 				),
 				array(
 					'title' => 'Net Profit Total',
 					'note'  => 'After removing tax',
-					'value' => $this->get_net_profit_total( $start_date, $end_date ),
+					'value' => $this->get_net_profit_total($start_date, $end_date),
 					'icon'  => 'dashicons-chart-line', // Represents profit trends
 					'color' => '#4CAF50', // Green for profit
 				),
 				array(
 					'title' => 'Shipping Tax',
 					'note'  => 'Total shipping with tax and net profit included',
-					'value' => $this->get_total_shipping( $start_date, $end_date ),
+					'value' => $this->get_total_shipping($start_date, $end_date),
 					'icon'  => 'dashicons-admin-site-alt3', // Represents shipping cost breakdown
 					'color' => '#607D8B', // Blue-grey for calculated metrics
 				),
 				array(
 					'title' => 'Total Sales',
 					'note'  => 'Total sales with tax and net profit included',
-					'value' => $this->get_total_sales( $start_date, $end_date ),
+					'value' => $this->get_total_sales($start_date, $end_date),
 					'icon'  => 'dashicons-cart', // Represents sales
 					'color' => '#2196F3', // Blue for sales
 				),
 				array(
 					'title' => 'Total Refund Amount',
 					'note'  => 'Total refund with tax and net profit included',
-					'value' => $this->get_total_refunds( $start_date, $end_date ),
+					'value' => $this->get_total_refunds($start_date, $end_date),
 					'icon'  => 'dashicons-backup', // Represents refunds
 					'color' => '#E91E63', // Pink for refund alert
 				),
 			);
 
-		return rest_ensure_response( $stats );
+		return rest_ensure_response($stats);
 	}
 
-	private function validate_dates( $start_date, $end_date ) {
-		if ( empty( $start_date ) || empty( $end_date ) ) {
+	private function validate_dates($start_date, $end_date)
+	{
+		if (empty($start_date) || empty($end_date)) {
 			return false;
 		}
 
-		$start = strtotime( $start_date );
-		$end   = strtotime( $end_date );
+		$start = strtotime($start_date);
+		$end   = strtotime($end_date);
 
-		if ( ! $start || ! $end || $start > $end ) {
+		if (! $start || ! $end || $start > $end) {
 			return false;
 		}
 
 		return true;
 	}
-	private function get_total_refunds( $start_date, $end_date ) {
+	private function get_total_refunds($start_date, $end_date)
+	{
 		global $wpdb;
 
 		// Prepare the query with placeholders for dynamic dates
@@ -332,11 +340,12 @@ class Admin {
 		);
 
 		// Return the total refund amount as a number
-		return floatval( $total_refund_amount );
+		return floatval($total_refund_amount);
 	}
 
 
-	private function get_total_shipping( $start_date, $end_date ) {
+	private function get_total_shipping($start_date, $end_date)
+	{
 		global $wpdb;
 		$params = array(
 			'card_name'  => 'get_total_shipping',
@@ -344,7 +353,7 @@ class Admin {
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				array(
-					'status' => array( 'wc-completed', 'wc-complete-warranty', 'wc-awaiting-pickup', 'wc-shipped', 'wc-shipped-warranty', 'wc-w-await-pickup', 'wc-awaiting-warranty-pickup' ),
+					'status' => array('wc-completed', 'wc-complete-warranty', 'wc-awaiting-pickup', 'wc-shipped', 'wc-shipped-warranty', 'wc-w-await-pickup', 'wc-awaiting-warranty-pickup'),
 					// 'total_tax_operator' => '>',
 					// 'total_tax'          => 0,
 				),
@@ -352,11 +361,12 @@ class Admin {
 		);
 		// error_log("params : " . print_r($params, true));
 
-		$results = $this->getCommonOrderStats( $params );
+		$results = $this->getCommonOrderStats($params);
 		return '$' . $results['shipping_total'];
 	}
 
-	private function get_tax_total( $start_date, $end_date ) {
+	private function get_tax_total($start_date, $end_date)
+	{
 		global $wpdb;
 
 		// $query = $wpdb->prepare("
@@ -380,7 +390,7 @@ class Admin {
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				array(
-					'status'             => array( 'wc-completed', 'wc-complete-warranty', 'wc-awaiting-pickup', 'wc-shipped', 'wc-shipped-warranty', 'wc-complete-warranty', 'wc-w-await-pickup', 'wc-awaiting-warranty-pickup' ),
+					'status'             => array('wc-completed', 'wc-complete-warranty', 'wc-awaiting-pickup', 'wc-shipped', 'wc-shipped-warranty', 'wc-complete-warranty', 'wc-w-await-pickup', 'wc-awaiting-warranty-pickup'),
 					'total_tax_operator' => '>',
 					'total_tax'          => 0,
 				),
@@ -388,7 +398,7 @@ class Admin {
 		);
 		// error_log("params : " . print_r($params, true));
 
-		$results = $this->getCommonOrderStats( $params );
+		$results = $this->getCommonOrderStats($params);
 		// error_log("tax total : " . print_r($results, true));
 		// return $results[0]->total_tax;
 		// if (is_array($results) && count($results) > 0) {
@@ -401,7 +411,8 @@ class Admin {
 	}
 
 
-	private function get_net_profit_total( $start_date, $end_date ) {
+	private function get_net_profit_total($start_date, $end_date)
+	{
 		global $wpdb;
 
 		$params = array(
@@ -431,13 +442,14 @@ class Admin {
 		);
 		// error_log("params : " . print_r($params, true));
 
-		$results = $this->getCommonOrderStats( $params );
+		$results = $this->getCommonOrderStats($params);
 		// error_log("tax total : " . print_r($results, true));
 
 		return '$' . $results['net_total'];
 	}
 
-	private function get_total_sales( $start_date, $end_date ) {
+	private function get_total_sales($start_date, $end_date)
+	{
 		global $wpdb;
 
 		$params = array(
@@ -451,19 +463,19 @@ class Admin {
 				// 'total_amount'          => 0,
 				// ),
 				array(
-					'status'                => array( 'wc-completed' ),
+					'status'                => array('wc-completed'),
 					'like_pattern'          => '%Order status changed from % to Completed%',
 					'total_amount'          => 0,
 					'total_amount_operator' => '>',
 				),
 				array(
-					'status'                => array( 'wc-complete-warranty' ),
+					'status'                => array('wc-complete-warranty'),
 					'like_pattern'          => '%Order status changed from % to Warranty Complete%',
 					'total_amount'          => 0,
 					'total_amount_operator' => '>',
 				),
 				array(
-					'status'                => array( 'wc-shipped' ),
+					'status'                => array('wc-shipped'),
 					'like_pattern'          => '%Order status changed from % to Shipped%',
 					'total_amount'          => 0,
 					'total_amount_operator' => '>',
@@ -472,13 +484,14 @@ class Admin {
 		);
 		// error_log("params : " . print_r($params, true));
 
-		$results = $this->getCommonOrderStats( $params );
+		$results = $this->getCommonOrderStats($params);
 		// error_log("tax total : " . print_r($results, true));
 
 		return '$' . $results['total_sales'];
 	}
 
-	private function get_refunded_orders( $start_date, $end_date ) {
+	private function get_refunded_orders($start_date, $end_date)
+	{
 		// $params = [
 		// 'start_date' => '2024-06-01 00:00:00',
 		// 'end_date' => $end_date . ' 23:59:59',
@@ -492,21 +505,22 @@ class Admin {
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				array(
-					'status'       => array( 'wc-refunded' ),
+					'status'       => array('wc-refunded'),
 					'like_pattern' => '%Order status changed from % to Refunded%',
 				),
 			),
 		);
 		// error_log("params : " . print_r($params, true));
 
-		$results = $this->getCommonOrderStats( $params );
+		$results = $this->getCommonOrderStats($params);
 		// error_log("refunded orders : " . print_r($results['order_count'], true));
 		// die;
 		return $results['order_count'];
 	}
 
 
-	private function get_warranty_shipped( $start_date, $end_date ) {
+	private function get_warranty_shipped($start_date, $end_date)
+	{
 		// $params = [
 		// 'start_date' => '2024-06-01 00:00:00',
 		// 'end_date' => $end_date . ' 23:59:59',
@@ -519,13 +533,13 @@ class Admin {
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				array(
-					'status'       => array( 'wc-shipped-warranty' ),
+					'status'       => array('wc-shipped-warranty'),
 					'like_pattern' => '%Order status changed from % to Warranty Shipped%',
 				),
 			),
 		);
 
-		$results = $this->getCommonOrderStats( $params );
+		$results = $this->getCommonOrderStats($params);
 		// if (is_array($results) && count($results) > 0) {
 		// return count($results);
 		// } else {
@@ -534,7 +548,8 @@ class Admin {
 		return $results['order_count'];
 	}
 
-	private function get_shipped_orders( $start_date, $end_date ) {
+	private function get_shipped_orders($start_date, $end_date)
+	{
 
 		// $params = [
 		// 'start_date' => '2024-06-01 00:00:00',
@@ -549,14 +564,14 @@ class Admin {
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				array(
-					'status'                => array( 'wc-shipped' ),
+					'status'                => array('wc-shipped'),
 					'like_pattern'          => '%Order status changed from % to Shipped%',
 					'total_amount'          => 0,
 					'total_amount_operator' => '>',
 				),
 			),
 		);
-		$results = $this->getCommonOrderStats( $params );
+		$results = $this->getCommonOrderStats($params);
 		// if (is_array($results) && count($results) > 0) {
 		// return count($results);
 		// } else {
@@ -566,7 +581,8 @@ class Admin {
 		return $results['order_count'];
 	}
 	// Update your stat methods to use date range
-	private function get_completed_warranty( $start_date, $end_date ) {
+	private function get_completed_warranty($start_date, $end_date)
+	{
 		// $params = [
 		// 'start_date' => '2024-06-01 00:00:00',
 		// 'end_date' => $end_date . ' 23:59:59',
@@ -590,7 +606,7 @@ class Admin {
 				// 'total_amount_operator' => '=',
 				// ),
 				array(
-					'status'                => array( 'wc-complete-warranty' ),
+					'status'                => array('wc-complete-warranty'),
 					'like_pattern'          => '%Order status changed from % to Warranty Complete%',
 					'total_amount'          => 0,
 					'total_amount_operator' => '=',
@@ -604,7 +620,7 @@ class Admin {
 			),
 		);
 
-		$results = $this->getCommonOrderStats( $params );
+		$results = $this->getCommonOrderStats($params);
 		// if (is_array($results) && count($results) > 0) {
 		// return count($results);
 		// } else {
@@ -613,7 +629,8 @@ class Admin {
 		return $results['order_count'];
 	}
 
-	private function get_completed_orders( $start_date, $end_date ) {
+	private function get_completed_orders($start_date, $end_date)
+	{
 		// $params = [
 		// 'start_date' => '2024-06-01 00:00:00',
 		// 'end_date' => $end_date . ' 23:59:59',
@@ -626,7 +643,7 @@ class Admin {
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				array(
-					'status'                => array( 'wc-completed' ),
+					'status'                => array('wc-completed'),
 					'like_pattern'          => '%Order status changed from % to Completed%',
 					'total_amount'          => 0,
 					'total_amount_operator' => '>',
@@ -634,7 +651,7 @@ class Admin {
 			),
 		);
 
-		$results = $this->getCommonOrderStats( $params );
+		$results = $this->getCommonOrderStats($params);
 		// if (is_array($results) && count($results) > 0) {
 		// return count($results);
 		// } else {
@@ -643,7 +660,8 @@ class Admin {
 		return $results['order_count'];
 	}
 
-	private function get_quote_orders( $start_date, $end_date ) {
+	private function get_quote_orders($start_date, $end_date)
+	{
 		// $params = [
 		// 'start_date' => '2024-06-01 00:00:00',
 		// 'end_date' => $end_date . ' 23:59:59',
@@ -656,12 +674,12 @@ class Admin {
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				array(
-					'status'       => array( 'wc-quote' ),
+					'status'       => array('wc-quote'),
 					'like_pattern' => '%Order status changed from % to Quote%',
 				),
 			),
 		);
-		$results = $this->getCommonOrderStats( $params );
+		$results = $this->getCommonOrderStats($params);
 		// if (is_array($results) && count($results) > 0) {
 		// return count($results);
 		// } else {
@@ -670,7 +688,8 @@ class Admin {
 		return $results['order_count'];
 	}
 
-	private function get_awaiting_pickup( $start_date, $end_date ) {
+	private function get_awaiting_pickup($start_date, $end_date)
+	{
 		// $params = [
 		// 'start_date' => '2024-06-01 00:00:00',
 		// 'end_date' => $end_date . ' 23:59:59',
@@ -683,13 +702,13 @@ class Admin {
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				array(
-					'status'       => array( 'wc-awaiting-pickup' ),
+					'status'       => array('wc-awaiting-pickup'),
 					'like_pattern' => '%Order status changed from % to Awaiting Pickup%',
 				),
 			),
 		);
 
-		$results = $this->getCommonOrderStats( $params );
+		$results = $this->getCommonOrderStats($params);
 		// if (is_array($results) && count($results) > 0) {
 		// return count($results);
 		// } else {
@@ -699,7 +718,8 @@ class Admin {
 	}
 
 
-	private function get_awaiting_warranty_pickup( $start_date, $end_date ) {
+	private function get_awaiting_warranty_pickup($start_date, $end_date)
+	{
 		// $params = [
 		// 'start_date' => '2024-06-01 00:00:00',
 		// 'end_date' => $end_date . ' 23:59:59',
@@ -712,13 +732,13 @@ class Admin {
 			'end_date'   => $end_date . ' 23:59:59',
 			'conditions' => array(
 				array(
-					'status'       => array( 'wc-w-await-pickup' ),
+					'status'       => array('wc-w-await-pickup'),
 					'like_pattern' => '%Order status changed from % to Awaiting Warranty Pickup%',
 				),
 			),
 		);
 
-		$results = $this->getCommonOrderStats( $params );
+		$results = $this->getCommonOrderStats($params);
 		// if (is_array($results) && count($results) > 0) {
 		// return count($results);
 		// } else {
@@ -726,35 +746,38 @@ class Admin {
 		// }
 		return $results['order_count'];
 	}
-	public function add_menu_page() {
+	public function add_menu_page()
+	{
 		$this->plugin_page_hook = add_menu_page(
 			'NPC Report',
 			'NPC Report',
 			'manage_options',
 			'npc-report',
-			array( $this, 'render_admin_page' ),
+			array($this, 'render_admin_page'),
 			'dashicons-admin-plugins'
 		);
 	}
 
-	public function render_admin_page() {
+	public function render_admin_page()
+	{
 		// Add a nonce for security
-		wp_nonce_field( 'my_react_plugin_nonce', 'my_react_plugin_nonce' );
+		wp_nonce_field('my_react_plugin_nonce', 'my_react_plugin_nonce');
 		echo '<div id="npc-report-admin"></div>';
 	}
 
-	public function enqueue_scripts( $hook ) {
+	public function enqueue_scripts($hook)
+	{
 		// Only load on our specific admin page
-		if ( $hook !== $this->plugin_page_hook ) {
+		if ($hook !== $this->plugin_page_hook) {
 			return;
 		}
 
-		$version = defined( 'WP_DEBUG' ) && WP_DEBUG ? time() : '1.0.0';
+		$version = defined('WP_DEBUG') && WP_DEBUG ? time() : '1.0.0';
 
 		wp_enqueue_script(
 			'npc-report-admin',
 			NPC_PLUGIN_URL . 'assets/js/dist/bundle.js',
-			array( 'wp-element' ),
+			array('wp-element'),
 			$version,
 			true
 		);
@@ -764,10 +787,10 @@ class Admin {
 			'npc-report-admin',
 			'npcReportData',
 			array(
-				'root'         => esc_url_raw( rest_url() ),
-				'nonce'        => wp_create_nonce( 'wp_rest' ),
-				'isAdmin'      => current_user_can( 'manage_options' ),
-				'isProduction' => ! defined( 'WP_DEBUG' ) || ! WP_DEBUG,
+				'root'         => esc_url_raw(rest_url()),
+				'nonce'        => wp_create_nonce('wp_rest'),
+				'isAdmin'      => current_user_can('manage_options'),
+				'isProduction' => ! defined('WP_DEBUG') || ! WP_DEBUG,
 			)
 		);
 
@@ -938,7 +961,8 @@ class Admin {
 
 
 
-	private function getCommonOrderStats( $params ) {
+	private function getCommonOrderStats($params)
+	{
 		global $wpdb;
 
 		// Base query structure
@@ -979,27 +1003,27 @@ class Admin {
 
 		// Dynamic conditions based on statuses, total_amount, and comment patterns
 		$conditions = array();
-		foreach ( $params['conditions'] as $condition ) {
+		foreach ($params['conditions'] as $condition) {
 			$condition_str = '(1 = 1'; // Start with a neutral condition to append others
 
-			if ( ! empty( $condition['status'] ) ) {
-				$status_list    = is_array( $condition['status'] ) ? implode( "','", $condition['status'] ) : $condition['status'];
+			if (! empty($condition['status'])) {
+				$status_list    = is_array($condition['status']) ? implode("','", $condition['status']) : $condition['status'];
 				$condition_str .= " AND o.status IN ('{$status_list}')";
 			}
 
-			if ( isset( $condition['total_amount'] ) && isset( $condition['total_amount_operator'] ) ) {
+			if (isset($condition['total_amount']) && isset($condition['total_amount_operator'])) {
 				$operator       = $condition['total_amount_operator'];
 				$value          = $condition['total_amount'];
 				$condition_str .= " AND o.total_amount {$operator} {$value}";
 			}
 
-			if ( isset( $condition['total_tax'] ) && isset( $condition['total_tax_operator'] ) ) {
+			if (isset($condition['total_tax']) && isset($condition['total_tax_operator'])) {
 				$operator       = $condition['total_tax_operator'];
 				$value          = $condition['total_tax'];
 				$condition_str .= " AND os.tax_total {$operator} {$value}";
 			}
 
-			if ( isset( $condition['like_pattern'] ) ) {
+			if (isset($condition['like_pattern'])) {
 				$condition_str .= " AND c.comment_content LIKE '{$condition['like_pattern']}'";
 			}
 
@@ -1008,7 +1032,7 @@ class Admin {
 		}
 
 		// Add conditions to query
-		$query .= implode( ' OR ', $conditions );
+		$query .= implode(' OR ', $conditions);
 
 		// Add date range filter
 		$query .= ') AND c.comment_date BETWEEN %s AND %s';
@@ -1019,19 +1043,19 @@ class Admin {
 		// ORDER BY o.id ASC";
 
 		// Prepare query with date parameters
-		$prepared_query = $wpdb->prepare( $query, $params['start_date'], $params['end_date'] );
+		$prepared_query = $wpdb->prepare($query, $params['start_date'], $params['end_date']);
 
 		// Log the query for debugging
-		error_log( '================================' );
-		error_log( ' Card Name ' . $params['card_name'] . '  Common Query: ' . $prepared_query );
-		error_log( '================================' );
+		error_log('================================');
+		error_log(' Card Name ' . $params['card_name'] . '  Common Query: ' . $prepared_query);
+		error_log('================================');
 		// Execute the query
-		$results = $wpdb->get_results( $prepared_query );
-		if ( count( $results ) > 0 ) {
-			error_log( ' Query results: ' . print_r( $results, true ) );
+		$results = $wpdb->get_results($prepared_query);
+		if (count($results) > 0) {
+			error_log(' Query results: ' . print_r($results, true));
 		}
 		// return $results = ( $results ) ? $results[0]->order_count : null;
-		if ( $results ) {
+		if ($results) {
 			return array(
 				'order_count'         => (int) $results[0]->order_count,
 				'total_tax'           => (float) $results[0]->total_tax_sum,
@@ -1361,7 +1385,8 @@ class Admin {
 
 
 	// Centralized function for status configurations
-	public function get_status_configs() {
+	public function get_status_configs()
+	{
 		// return [
 		// 'wc-completed' => [
 		// 'status' => 'wc-completed',
@@ -1495,7 +1520,7 @@ class Admin {
 					// 'total_amount_operator' => '=',
 					// ),
 					array(
-						'status'                => array( 'wc-complete-warranty' ),
+						'status'                => array('wc-complete-warranty'),
 						'like_pattern'          => '%Order status changed from % to Warranty Complete%',
 						'total_amount'          => 0,
 						'total_amount_operator' => '=',
@@ -1514,19 +1539,20 @@ class Admin {
 
 
 
-	public function get_orders_count( $status, $start_date, $end_date ) {
+	public function get_orders_count($status, $start_date, $end_date)
+	{
 		global $wpdb;
 
 		$status_configs = $this->get_status_configs();
 
-		if ( ! isset( $status_configs[ $status ] ) ) {
-			error_log( 'Invalid status provided for count: ' . $status );
+		if (! isset($status_configs[$status])) {
+			error_log('Invalid status provided for count: ' . $status);
 			return 0;
 		}
 
-		$conditions = $status_configs[ $status ]['conditions'];
-		if ( empty( $conditions ) ) {
-			error_log( 'No conditions defined for status: ' . $status );
+		$conditions = $status_configs[$status]['conditions'];
+		if (empty($conditions)) {
+			error_log('No conditions defined for status: ' . $status);
 			return 0;
 		}
 
@@ -1542,22 +1568,22 @@ class Admin {
 		$params            = array();
 		$condition_queries = array();
 
-		foreach ( $conditions as $condition ) {
+		foreach ($conditions as $condition) {
 			$condition_query = '(1 = 1';
 
-			if ( ! empty( $condition['status'] ) ) {
-				$status_list      = is_array( $condition['status'] ) ? $condition['status'] : array( $condition['status'] );
-				$placeholders     = implode( ',', array_fill( 0, count( $status_list ), '%s' ) );
+			if (! empty($condition['status'])) {
+				$status_list      = is_array($condition['status']) ? $condition['status'] : array($condition['status']);
+				$placeholders     = implode(',', array_fill(0, count($status_list), '%s'));
 				$condition_query .= " AND o.status IN ($placeholders)";
-				$params           = array_merge( $params, $status_list );
+				$params           = array_merge($params, $status_list);
 			}
 
-			if ( ! empty( $condition['like_pattern'] ) ) {
+			if (! empty($condition['like_pattern'])) {
 				$condition_query .= ' AND c.comment_content LIKE %s';
 				$params[]         = $condition['like_pattern'];
 			}
 
-			if ( isset( $condition['total_amount'] ) ) {
+			if (isset($condition['total_amount'])) {
 				$operator         = $condition['total_amount_operator'] ?? '=';
 				$condition_query .= " AND o.total_amount $operator %f";
 				$params[]         = $condition['total_amount'];
@@ -1568,35 +1594,36 @@ class Admin {
 		}
 
 		// Combine all condition queries with OR
-		$query .= implode( ' OR ', $condition_queries ) . ')';
+		$query .= implode(' OR ', $condition_queries) . ')';
 
 		// Add date range condition
-		if ( $start_date && $end_date ) {
+		if ($start_date && $end_date) {
 			$query   .= ' AND c.comment_date BETWEEN %s AND %s';
 			$params[] = $start_date . ' 00:00:00';
 			$params[] = $end_date . ' 23:59:59';
 		}
 
-		$prepared_query = $wpdb->prepare( $query, $params );
+		$prepared_query = $wpdb->prepare($query, $params);
 
-		error_log( 'Prepared Orders Count Query: ' . $prepared_query );
+		error_log('Prepared Orders Count Query: ' . $prepared_query);
 
-		return (int) $wpdb->get_var( $prepared_query );
+		return (int) $wpdb->get_var($prepared_query);
 	}
 
-	public function execute_orders_query( $status, $start_date, $end_date, $per_page, $offset ) {
+	public function execute_orders_query($status, $start_date, $end_date, $per_page, $offset)
+	{
 		global $wpdb;
 
 		$status_configs = $this->get_status_configs();
 
-		if ( ! isset( $status_configs[ $status ] ) ) {
-			error_log( 'Invalid status provided: ' . $status );
+		if (! isset($status_configs[$status])) {
+			error_log('Invalid status provided: ' . $status);
 			return array();
 		}
 
-		$conditions = $status_configs[ $status ]['conditions'];
-		if ( empty( $conditions ) ) {
-			error_log( 'No conditions defined for status: ' . $status );
+		$conditions = $status_configs[$status]['conditions'];
+		if (empty($conditions)) {
+			error_log('No conditions defined for status: ' . $status);
 			return array();
 		}
 
@@ -1610,10 +1637,16 @@ class Admin {
             c.comment_date AS order_update_date,
             nwcl.first_name AS fname,
             nwcl.last_name AS lname,
-            nwcl.username AS username
+            nwcl.username AS username,
+			SUM(CASE WHEN om.meta_key = '_stripe_net' AND om.meta_value IS NOT NULL THEN om.meta_value ELSE COALESCE(o.total_amount, 0) END) AS total
+
         FROM {$wpdb->prefix}wc_orders o
         LEFT JOIN {$wpdb->prefix}comments c ON o.id = c.comment_post_ID 
             AND c.comment_type = 'order_note'
+		LEFT JOIN
+            {$wpdb->prefix}wc_orders_meta om ON
+			o.id = om.order_id
+			and om.meta_key = '_stripe_net'
         LEFT JOIN {$wpdb->prefix}wc_customer_lookup nwcl ON o.customer_id = nwcl.user_id
         WHERE 1 = 1 AND (
     ";
@@ -1621,22 +1654,22 @@ class Admin {
 		$params            = array();
 		$condition_queries = array();
 
-		foreach ( $conditions as $condition ) {
+		foreach ($conditions as $condition) {
 			$condition_query = '(1 = 1';
 
-			if ( ! empty( $condition['status'] ) ) {
-				$status_list      = is_array( $condition['status'] ) ? $condition['status'] : array( $condition['status'] );
-				$placeholders     = implode( ',', array_fill( 0, count( $status_list ), '%s' ) );
+			if (! empty($condition['status'])) {
+				$status_list      = is_array($condition['status']) ? $condition['status'] : array($condition['status']);
+				$placeholders     = implode(',', array_fill(0, count($status_list), '%s'));
 				$condition_query .= " AND o.status IN ($placeholders)";
-				$params           = array_merge( $params, $status_list );
+				$params           = array_merge($params, $status_list);
 			}
 
-			if ( ! empty( $condition['like_pattern'] ) ) {
+			if (! empty($condition['like_pattern'])) {
 				$condition_query .= ' AND c.comment_content LIKE %s';
 				$params[]         = $condition['like_pattern'];
 			}
 
-			if ( isset( $condition['total_amount'] ) ) {
+			if (isset($condition['total_amount'])) {
 				$operator         = $condition['total_amount_operator'] ?? '=';
 				$condition_query .= " AND o.total_amount $operator %f";
 				$params[]         = $condition['total_amount'];
@@ -1646,9 +1679,9 @@ class Admin {
 			$condition_queries[] = $condition_query;
 		}
 
-		$query .= implode( ' OR ', $condition_queries ) . ')';
+		$query .= implode(' OR ', $condition_queries) . ')';
 
-		if ( $start_date && $end_date ) {
+		if ($start_date && $end_date) {
 			$query   .= ' AND c.comment_date BETWEEN %s AND %s';
 			$params[] = $start_date . ' 00:00:00';
 			$params[] = $end_date . ' 23:59:59';
@@ -1659,10 +1692,10 @@ class Admin {
 		$params[] = $per_page;
 		$params[] = $offset;
 
-		$prepared_query = $wpdb->prepare( $query, $params );
+		$prepared_query = $wpdb->prepare($query, $params);
 
-		error_log( 'Prepared Orders Query: ' . $prepared_query );
+		error_log('Prepared Orders Query: ' . $prepared_query);
 
-		return $wpdb->get_results( $prepared_query );
+		return $wpdb->get_results($prepared_query);
 	}
 }
