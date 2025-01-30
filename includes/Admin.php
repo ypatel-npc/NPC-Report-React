@@ -250,33 +250,40 @@ class Admin
 					'status' => 'wc-awaiting-pickup',
 				),
 				array(
+					'title'  => 'Awaiting Shipment Pickup',
+					'value'  => $this->get_awaiting_shipment_pickup($start_date, $end_date),
+					'icon'   => 'dashicons-location-alt', // Represents pickup location
+					'color'  => '#FF9900', // Orange for pending action
+					'status' => 'wc-awaiting-shipment',
+				),
+				array(
 					'title'  => 'Awaiting Warranty Pickup',
 					'value'  => $this->get_awaiting_warranty_pickup($start_date, $end_date),
 					'icon'   => 'dashicons-location', // Represents warranty pickup location
 					'color'  => '#FF5722', // Deep orange for pending warranty pickup
 					'status' => 'wc-w-await-pickup',
 				),
-				array(
-					'title' => 'Tax Total',
-					'note'  => 'Total tax collected',
-					'value' => $this->get_tax_total($start_date, $end_date),
-					'icon'  => 'dashicons-chart-area', // Represents tax summary
-					'color' => '#9C27B0', // Purple for financial metrics
-				),
-				array(
-					'title' => 'Net Profit Total',
-					'note'  => 'After removing tax',
-					'value' => $this->get_net_profit_total($start_date, $end_date),
-					'icon'  => 'dashicons-chart-line', // Represents profit trends
-					'color' => '#4CAF50', // Green for profit
-				),
-				array(
-					'title' => 'Shipping Tax',
-					'note'  => 'Total shipping with tax and net profit included',
-					'value' => $this->get_total_shipping($start_date, $end_date),
-					'icon'  => 'dashicons-admin-site-alt3', // Represents shipping cost breakdown
-					'color' => '#607D8B', // Blue-grey for calculated metrics
-				),
+				// array(
+				// 	'title' => 'Tax Total',
+				// 	'note'  => 'Total tax collected',
+				// 	'value' => $this->get_tax_total($start_date, $end_date),
+				// 	'icon'  => 'dashicons-chart-area', // Represents tax summary
+				// 	'color' => '#9C27B0', // Purple for financial metrics
+				// ),
+				// array(
+				// 	'title' => 'Net Profit Total',
+				// 	'note'  => 'After removing tax',
+				// 	'value' => $this->get_net_profit_total($start_date, $end_date),
+				// 	'icon'  => 'dashicons-chart-line', // Represents profit trends
+				// 	'color' => '#4CAF50', // Green for profit
+				// ),
+				// array(
+				// 	'title' => 'Shipping Tax',
+				// 	'note'  => 'Total shipping with tax and net profit included',
+				// 	'value' => $this->get_total_shipping($start_date, $end_date),
+				// 	'icon'  => 'dashicons-admin-site-alt3', // Represents shipping cost breakdown
+				// 	'color' => '#607D8B', // Blue-grey for calculated metrics
+				// ),
 				array(
 					'title' => 'Total Sales',
 					'note'  => 'Total sales with tax and net profit included',
@@ -717,6 +724,35 @@ class Admin
 		return $results['order_count'];
 	}
 
+	private function get_awaiting_shipment_pickup($start_date, $end_date)
+	{
+		// $params = [
+		// 'start_date' => '2024-06-01 00:00:00',
+		// 'end_date' => $end_date . ' 23:59:59',
+		// 'statuses' => ['wc-awaiting-pickup'],
+		// 'like_pattern' => '%Order status changed from % to Awaiting Pickup%'
+		// ];
+		$params = array(
+			'card_name'  => 'get_awaiting_shipment_pickup',
+			'start_date' => $start_date . ' 00:00:00',
+			'end_date'   => $end_date . ' 23:59:59',
+			'conditions' => array(
+				array(
+					'status'       => array('wc-awaiting-shipment'),
+					'like_pattern' => '%Order status changed from % to Awaiting Shipment%',
+				),
+			),
+		);
+
+		$results = $this->getCommonOrderStats($params);
+		// if (is_array($results) && count($results) > 0) {
+		// return count($results);
+		// } else {
+		// return null;
+		// }
+		return $results['order_count'];
+	}
+
 
 	private function get_awaiting_warranty_pickup($start_date, $end_date)
 	{
@@ -985,7 +1021,9 @@ class Admin
 			SUM(DISTINCT os.tax_total) AS total_tax_sum,
 			SUM(DISTINCT os.shipping_total) AS shipping_total,
 			SUM(DISTINCT CASE WHEN om.meta_key = '_stripe_net' AND om.meta_value IS NOT NULL THEN om.meta_value ELSE COALESCE(os.total_sales, 0) END) AS net_total,
-			COALESCE(SUM(DISTINCT o.total_amount), 0) AS total_refund_amount
+			COALESCE(SUM(DISTINCT o.total_amount), 0) AS total_refund_amount,
+			SUM(CASE WHEN om.meta_key = '_stripe_net' AND om.meta_value IS NOT NULL THEN om.meta_value ELSE COALESCE(o.total_amount, 0) END) AS total
+
 
         FROM
             {$wpdb->prefix}wc_orders o
@@ -1059,10 +1097,11 @@ class Admin
 			return array(
 				'order_count'         => (int) $results[0]->order_count,
 				'total_tax'           => (float) $results[0]->total_tax_sum,
-				'total_sales'         => (float) $results[0]->total_amount_sum,
+				// 'total_sales'         => (float) $results[0]->total_amount_sum,
 				'shipping_total'      => (float) $results[0]->shipping_total,
 				'net_total'           => (float) $results[0]->net_total,
 				'total_refund_amount' => (float) $results[0]->total_refund_amount,
+				'total_sales' => (float) $results[0]->total,
 			);
 		}
 
@@ -1455,6 +1494,16 @@ class Admin
 					),
 				),
 			),
+			'wc-awaiting-shipment'          => array(
+				'conditions' => array(
+					array(
+						'status'                => 'wc-awaiting-shipment',
+						'like_pattern'          => '%Order status changed from % to Awaiting Shipment%',
+						'total_amount_operator' => '>',
+						'total_amount'          => 0,
+					),
+				),
+			),
 			'wc-shipped'                  => array(
 				'conditions' => array(
 					array(
@@ -1637,16 +1686,10 @@ class Admin
             c.comment_date AS order_update_date,
             nwcl.first_name AS fname,
             nwcl.last_name AS lname,
-            nwcl.username AS username,
-			SUM(CASE WHEN om.meta_key = '_stripe_net' AND om.meta_value IS NOT NULL THEN om.meta_value ELSE COALESCE(o.total_amount, 0) END) AS total
-
+            nwcl.username AS username
         FROM {$wpdb->prefix}wc_orders o
         LEFT JOIN {$wpdb->prefix}comments c ON o.id = c.comment_post_ID 
             AND c.comment_type = 'order_note'
-		LEFT JOIN
-            {$wpdb->prefix}wc_orders_meta om ON
-			o.id = om.order_id
-			and om.meta_key = '_stripe_net'
         LEFT JOIN {$wpdb->prefix}wc_customer_lookup nwcl ON o.customer_id = nwcl.user_id
         WHERE 1 = 1 AND (
     ";
