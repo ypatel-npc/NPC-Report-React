@@ -3,6 +3,7 @@ import StatsCard from '../components/StatsCard';
 import DateRangePicker, { getDefaultDateRange } from '../components/DateRangePicker';
 import OrderDetailView from '../components/OrderDetailView';
 import DashboardExportButton from '../components/DashboardExportButton';
+import Select from 'react-select';
 
 const Dashboard = () => {
 	const [stats, setStats] = useState([]);
@@ -10,7 +11,10 @@ const Dashboard = () => {
 	const [error, setError] = useState(null);
 	const [selectedStatus, setSelectedStatus] = useState(null);
 	const [dateRange, setDateRange] = useState(getDefaultDateRange());
-
+	const [selectedFilters, setSelectedFilters] = useState([]);
+	// Add these console logs
+	// console.log('Stats:', stats);
+	// console.log('Selected Filters:', selectedFilters);
 	// Fetch data when date changes
 	const fetchDashboardStats = async (dates) => {
 		setLoading(true);
@@ -49,6 +53,14 @@ const Dashboard = () => {
 		setDateRange(newDates);
 	}, []);
 
+	// Create options with proper handling of undefined values
+	const filterOptions = stats ? stats.map(stat => ({
+		value: stat.status || stat.title, // Use title as fallback if status is undefined
+		label: stat.title
+	})) : [];
+
+	
+
 	return (
 		<div className="wrap">
 			<div className="dashboard-header">
@@ -64,18 +76,38 @@ const Dashboard = () => {
 
 			<DateRangePicker onDateChange={handleDateChange} />
 
+			<div className="filter-section">
+				<Select
+					isMulti
+					value={selectedFilters}
+					onChange={(selected) => setSelectedFilters(selected || [])}
+					options={filterOptions}
+					className="basic-multi-select"
+					classNamePrefix="select"
+					placeholder="Select Filters..."
+				/>
+			</div>
+
 			{loading && <div className="loading-state">Loading dashboard data...</div>}
 			{error && <div className="error-state">Error: {error}</div>}
 
 			{!loading && !error && (
 				<div className="stats-grid">
-					{stats.map((stat, index) => (
-						<StatsCard
-							key={`stat-${index}-${stat.status}`}
-							{...stat}
-							onClick={() => setSelectedStatus(stat.status)}
-						/>
-					))}
+					{stats
+						.filter(stat => {
+							if (selectedFilters.length === 0) return true;
+							
+							return selectedFilters.some(filter => 
+								filter.value === (stat.status || stat.title)
+							);
+						})
+						.map((stat, index) => (
+							<StatsCard
+								key={`stat-${index}-${stat.title}`}
+								{...stat}
+								onClick={() => setSelectedStatus(stat.status)}
+							/>
+						))}
 				</div>
 			)}
 
