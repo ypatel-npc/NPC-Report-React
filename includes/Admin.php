@@ -787,7 +787,7 @@ class Admin
 		$this->plugin_page_hook = add_menu_page(
 			'NPC Report',
 			'NPC Report',
-			'manage_options',
+			'edit_shop_orders',
 			'npc-report',
 			array($this, 'render_admin_page'),
 			'dashicons-admin-plugins'

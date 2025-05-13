@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: NPC Report React
- * Description: WordPress plugin with React integration
- * Version: 1.0.0
- * Author: Your Name
+ * Plugin Name: NPC Report React V2
+ * Description: NPC REPORTS
+ * Version: 2.0.0
+ * Author: Yash patel
  */
 
 if (!defined('ABSPATH')) {
