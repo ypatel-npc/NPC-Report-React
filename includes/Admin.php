@@ -37,7 +37,7 @@ class Admin
 				'callback'            => array($this, 'get_stats_data'),
 				'permission_callback' => function ($request) {
 					// Verify if user is admin
-					if (! current_user_can('manage_options')) {
+					if (! current_user_can('edit_shop_orders')) {
 						return new \WP_Error(
 							'rest_forbidden',
 							'Sorry, you are not allowed to do that.',
