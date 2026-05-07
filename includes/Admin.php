@@ -60,6 +60,98 @@ class Admin
 				},
 			)
 		);
+
+		register_rest_route(
+			'npc-report/v1',
+			'/hardware-skus',
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => array($this, 'get_hardware_sku_breakdown'),
+				'permission_callback' => function ($request) {
+					if (! current_user_can('edit_shop_orders')) {
+						return new \WP_Error(
+							'rest_forbidden',
+							'Sorry, you are not allowed to do that.',
+							array('status' => 401)
+						);
+					}
+					return true;
+				},
+			)
+		);
+	}
+
+	/**
+	 * Paginated SKU breakdown for the Hardware stat (completed + shipped orders, posts + line items).
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function get_hardware_sku_breakdown($request)
+	{
+		global $wpdb;
+
+		$start_date = sanitize_text_field($request->get_param('start_date'));
+		$end_date   = sanitize_text_field($request->get_param('end_date'));
+		$page       = max(1, (int) ($request->get_param('page') ?: 1));
+		$per_page   = min(100, max(1, (int) ($request->get_param('per_page') ?: 20)));
+
+		if (! $this->validate_dates($start_date, $end_date)) {
+			return new \WP_Error(
+				'invalid_dates',
+				'Invalid date range provided.',
+				array('status' => 400)
+			);
+		}
+
+		$range_start = $start_date . ' 00:00:00';
+		$range_end   = $end_date . ' 23:59:59';
+		$offset      = ($page - 1) * $per_page;
+
+		$from_where = $this->get_hardware_line_items_from_where_sql();
+
+		$count_sql = "
+			SELECT COUNT(*) FROM (
+				SELECT 1
+				{$from_where}
+				GROUP BY TRIM(COALESCE(sku_var.meta_value, sku_prod.meta_value))
+			) grouped
+		";
+		$total_skus = (int) $wpdb->get_var($wpdb->prepare($count_sql, $range_start, $range_end));
+
+		$data_sql = "
+			SELECT
+				TRIM(COALESCE(sku_var.meta_value, sku_prod.meta_value)) AS sku,
+				MAX(oi.order_item_name) AS product_name,
+				SUM(CAST(qty.meta_value AS UNSIGNED)) AS units_sold
+			{$from_where}
+			GROUP BY TRIM(COALESCE(sku_var.meta_value, sku_prod.meta_value))
+			ORDER BY units_sold DESC, sku ASC
+			LIMIT %d OFFSET %d
+		";
+		$rows = $wpdb->get_results($wpdb->prepare($data_sql, $range_start, $range_end, $per_page, $offset));
+
+		$items = array();
+		if (is_array($rows)) {
+			foreach ($rows as $r) {
+				$items[] = array(
+					'sku'           => (string) $r->sku,
+					'product_name'  => (string) $r->product_name,
+					'units_sold'   => (int) $r->units_sold,
+				);
+			}
+		}
+
+		return rest_ensure_response(
+			array(
+				'items'       => $items,
+				'total'       => $total_skus,
+				'total_units' => $this->get_hardware_skus_out_count($start_date, $end_date),
+				'page'        => $page,
+				'per_page'    => $per_page,
+				'pages'       => $total_skus > 0 ? (int) ceil($total_skus / $per_page) : 0,
+			)
+		);
 	}
 
 
@@ -263,6 +355,14 @@ class Admin
 					'color'  => '#FF5722', // Deep orange for pending warranty pickup
 					'status' => 'wc-w-await-pickup',
 				),
+				array(
+					'title'  => 'Hardware',
+					'note'   => 'How many product SKUs went out in the selected range',
+					'value'  => $this->get_hardware_skus_out_count($start_date, $end_date),
+					'icon'   => 'dashicons-admin-tools',
+					'color'  => '#795548',
+					'status' => 'hardware-skus',
+				),
 				// array(
 				// 	'title' => 'Tax Total',
 				// 	'note'  => 'Total tax collected',
@@ -318,6 +418,68 @@ class Admin
 
 		return true;
 	}
+
+	/**
+	 * Shared FROM/WHERE for hardware reports (Woo line items + shop_order posts, completed & shipped, SKU required).
+	 * Uses two date placeholders: %s %s (start and end of range for p.post_date).
+	 *
+	 * @return string SQL fragment beginning with FROM.
+	 */
+	private function get_hardware_line_items_from_where_sql()
+	{
+		global $wpdb;
+
+		return "
+			FROM {$wpdb->prefix}woocommerce_order_items oi
+			INNER JOIN {$wpdb->posts} p
+				ON p.ID = oi.order_id
+				AND p.post_type = 'shop_order'
+				AND p.post_status IN ('wc-completed', 'wc-shipped')
+				AND p.post_date >= %s
+				AND p.post_date <= %s
+			INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta qty
+				ON oi.order_item_id = qty.order_item_id
+				AND qty.meta_key = '_qty'
+			INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta pid
+				ON oi.order_item_id = pid.order_item_id
+				AND pid.meta_key = '_product_id'
+			LEFT JOIN {$wpdb->prefix}woocommerce_order_itemmeta vid
+				ON oi.order_item_id = vid.order_item_id
+				AND vid.meta_key = '_variation_id'
+			LEFT JOIN {$wpdb->postmeta} sku_var
+				ON sku_var.post_id = CAST(NULLIF(NULLIF(vid.meta_value, ''), '0') AS UNSIGNED)
+				AND sku_var.meta_key = '_sku'
+			LEFT JOIN {$wpdb->postmeta} sku_prod
+				ON sku_prod.post_id = CAST(pid.meta_value AS UNSIGNED)
+				AND sku_prod.meta_key = '_sku'
+			WHERE oi.order_item_type = 'line_item'
+				AND NULLIF(TRIM(COALESCE(sku_var.meta_value, sku_prod.meta_value)), '') IS NOT NULL
+		";
+	}
+
+	/**
+	 * Hardware: total line-item qty for orders in range (posts), statuses shipped + completed.
+	 * Uses postmeta `_sku` on variation or product; lines with no SKU are excluded.
+	 *
+	 * @param string $start_date Y-m-d from dashboard.
+	 * @param string $end_date   Y-m-d from dashboard.
+	 * @return int Total units (sum of `_qty`).
+	 */
+	private function get_hardware_skus_out_count($start_date, $end_date)
+	{
+		global $wpdb;
+
+		$range_start = $start_date . ' 00:00:00';
+		$range_end   = $end_date . ' 23:59:59';
+		$from_where  = $this->get_hardware_line_items_from_where_sql();
+		$sql         = "
+			SELECT COALESCE(SUM(CAST(qty.meta_value AS UNSIGNED)), 0)
+			{$from_where}
+		";
+
+		return (int) $wpdb->get_var($wpdb->prepare($sql, $range_start, $range_end));
+	}
+
 	private function get_total_refunds($start_date, $end_date)
 	{
 		global $wpdb;
@@ -808,7 +970,9 @@ class Admin
 			return;
 		}
 
-		$version = defined('WP_DEBUG') && WP_DEBUG ? time() : '1.0.0';
+		$bundle_path = NPC_PLUGIN_PATH . 'assets/js/dist/bundle.js';
+		$bundle_ver  = file_exists($bundle_path) ? (string) filemtime($bundle_path) : '1.0.0';
+		$version     = defined('WP_DEBUG') && WP_DEBUG ? (string) time() : $bundle_ver;
 
 		wp_enqueue_script(
 			'npc-report-admin',
@@ -825,17 +989,20 @@ class Admin
 			array(
 				'root'         => esc_url_raw(rest_url()),
 				'nonce'        => wp_create_nonce('wp_rest'),
-				'isAdmin'      => current_user_can('manage_options'),
+				'isAdmin'      => current_user_can('edit_shop_orders'),
 				'isProduction' => ! defined('WP_DEBUG') || ! WP_DEBUG,
 			)
 		);
+
+		$css_path = NPC_PLUGIN_PATH . 'assets/css/dist/main.css';
+		$css_ver  = file_exists($css_path) ? (string) filemtime($css_path) : $bundle_ver;
 
 		// Enqueue the production CSS file with a dependency on 'wp-components'
 		wp_enqueue_style(
 			'npc-report-admin-css',
 			NPC_PLUGIN_URL . 'assets/css/dist/main.css', // Adjust this path as needed
 			array(), // WordPress dependencies
-			$version,
+			$css_ver,
 			'all'
 		);
 	}
@@ -1084,14 +1251,14 @@ class Admin
 		$prepared_query = $wpdb->prepare($query, $params['start_date'], $params['end_date']);
 
 		// Log the query for debugging
-		error_log('================================');
-		error_log(' Card Name ' . $params['card_name'] . '  Common Query: ' . $prepared_query);
-		error_log('================================');
+		// error_log('================================');
+		// error_log(' Card Name ' . $params['card_name'] . '  Common Query: ' . $prepared_query);
+		// error_log('================================');
 		// Execute the query
 		$results = $wpdb->get_results($prepared_query);
-		if (count($results) > 0) {
-			error_log(' Query results: ' . print_r($results, true));
-		}
+		// if (count($results) > 0) {
+		// 	error_log(' Query results: ' . print_r($results, true));
+		// }
 		// return $results = ( $results ) ? $results[0]->order_count : null;
 		if ($results) {
 			return array(
