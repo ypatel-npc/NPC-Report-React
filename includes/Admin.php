@@ -422,6 +422,7 @@ class Admin
 	/**
 	 * Shared FROM/WHERE for hardware reports (Woo line items + shop_order posts, completed & shipped, SKU required).
 	 * Uses two date placeholders: %s %s (start and end of range for p.post_date).
+	 * Excludes fee/deposit lines: "CORE DEPOSIT" and "Program Fee" (by SKU or line item name).
 	 *
 	 * @return string SQL fragment beginning with FROM.
 	 */
@@ -454,6 +455,10 @@ class Admin
 				AND sku_prod.meta_key = '_sku'
 			WHERE oi.order_item_type = 'line_item'
 				AND NULLIF(TRIM(COALESCE(sku_var.meta_value, sku_prod.meta_value)), '') IS NOT NULL
+				AND NOT (
+					LOWER(TRIM(COALESCE(sku_var.meta_value, sku_prod.meta_value))) IN ('core deposit', 'program fee')
+					OR LOWER(TRIM(oi.order_item_name)) IN ('core deposit', 'program fee')
+				)
 		";
 	}
 
